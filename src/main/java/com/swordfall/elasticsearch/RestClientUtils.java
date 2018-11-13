@@ -5,6 +5,8 @@ import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.DocWriteRequest;
 import org.elasticsearch.action.DocWriteResponse;
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
@@ -72,6 +74,8 @@ public class RestClientUtils {
             e.printStackTrace();
         }
     }
+
+    /*------------------------------------------------ document Api start --------------------------------------------*/
 
     /**
      * 增，插入记录
@@ -278,5 +282,97 @@ public class RestClientUtils {
             }
         }
     }
+
+    /**
+     * 存在
+     * @throws Exception
+     */
+    public void exists() throws Exception{
+        GetRequest getRequest = new GetRequest("posts", "doc", "1");
+        getRequest.fetchSourceContext(new FetchSourceContext(false));
+        getRequest.storedFields("_none_");
+
+        //Synchronous Execution
+        boolean exists = client.exists(getRequest, RequestOptions.DEFAULT);
+
+        //Asynchronous Execution
+        ActionListener<Boolean> listener = new ActionListener<Boolean>() {
+            @Override
+            public void onResponse(Boolean exists) {
+
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+
+            }
+        };
+        client.existsAsync(getRequest, RequestOptions.DEFAULT, listener);
+    }
+
+    public void delete() throws Exception{
+        DeleteRequest request = new DeleteRequest("posts", "doc", "1");
+
+        //optional arguments
+        request.routing("routing");
+        request.parent("parent");
+        request.timeout(TimeValue.timeValueMinutes(2));
+        request.timeout("2m");
+        request.setRefreshPolicy(WriteRequest.RefreshPolicy.WAIT_UNTIL);
+        request.setRefreshPolicy("wait_for");
+        request.version(2);
+        request.versionType(VersionType.EXTERNAL);
+
+        //Synchronous Execution
+        DeleteResponse deleteResponse = client.delete(request, RequestOptions.DEFAULT);
+
+        //Asynchronous Execution
+        ActionListener<DeleteResponse> listener = new ActionListener<DeleteResponse>() {
+            @Override
+            public void onResponse(DeleteResponse deleteResponse) {
+
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+
+            }
+        };
+        client.deleteAsync(request, RequestOptions.DEFAULT, listener);
+
+        //Delete Response
+        String index = deleteResponse.getIndex();
+        String type = deleteResponse.getType();
+        String id = deleteResponse.getId();
+        long version = deleteResponse.getVersion();
+        ReplicationResponse.ShardInfo shardInfo = deleteResponse.getShardInfo();
+        if (shardInfo.getTotal() != shardInfo.getSuccessful()) {
+
+        }
+        if (shardInfo.getFailed() > 0) {
+            for (ReplicationResponse.ShardInfo.Failure failure : shardInfo.getFailures()) {
+                String reason = failure.reason();
+            }
+        }
+
+        // document was not found
+        DeleteRequest request1 = new DeleteRequest("posts", "doc", "does_not_exist");
+        DeleteResponse deleteResponse1 = client.delete(request1, RequestOptions.DEFAULT);
+        if (deleteResponse1.getResult() == DocWriteResponse.Result.NOT_FOUND) {
+
+        }
+
+        //throw Exception
+        try {
+            DeleteRequest request2 = new DeleteRequest("posts", "doc", "1").version(2);
+            DeleteResponse deleteResponse2 = client.delete(request2, RequestOptions.DEFAULT);
+        } catch (ElasticsearchException exception) {
+            if (exception.status() == RestStatus.CONFLICT) {
+
+            }
+        }
+    }
+
+    /*------------------------------------------------ document Api end ----------------------------------------------*/
 
 }
