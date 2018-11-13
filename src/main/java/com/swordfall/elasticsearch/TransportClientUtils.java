@@ -16,7 +16,6 @@ import org.elasticsearch.action.search.*;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.geo.GeoPoint;
 import org.elasticsearch.common.network.InetAddresses;
 import org.elasticsearch.common.settings.Settings;
@@ -32,15 +31,11 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.functionscore.FunctionScoreQueryBuilder;
 import org.elasticsearch.index.reindex.*;
-import org.elasticsearch.join.aggregations.Children;
-import org.elasticsearch.join.aggregations.ChildrenAggregationBuilder;
 import org.elasticsearch.join.query.JoinQueryBuilders;
-import org.elasticsearch.percolator.PercolateQueryBuilder;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.script.mustache.SearchTemplateRequestBuilder;
-import org.elasticsearch.search.DocValueFormat;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
@@ -90,7 +85,6 @@ import org.elasticsearch.tasks.TaskInfo;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
 import org.joda.time.DateTime;
 
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.Date;
@@ -107,13 +101,13 @@ import static org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders.
  * @Author: Yang JianQiu
  * @Date: 2018/11/12 16:40
  */
-public class ClientUtils {
+public class TransportClientUtils {
 
     private TransportClient client = null;
 
-    public ClientUtils() {
+    public TransportClientUtils() {
         if (client == null){
-            synchronized (ClientUtils.class){
+            synchronized (TransportClientUtils.class){
                 if (client == null){
                     client = getClient();
                 }

@@ -7,7 +7,7 @@ package com.swordfall.elasticsearch;
 public class ElasticSearchDemo {
 
     public static void main(String[] args) throws Exception{
-        ClientUtils client = new ClientUtils();
+        TransportClientUtils client = new TransportClientUtils();
 
         /*String json = "{" +
                 "\"user\":\"kimchy\"," +
