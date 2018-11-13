@@ -100,6 +100,8 @@ import static org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders.
 /**
  * @Author: Yang JianQiu
  * @Date: 2018/11/12 16:40
+ *
+ * transportClient将会在7.0版本上过时，并在8.0版本上移除掉，建议使用Java High Level REST Client
  */
 public class TransportClientUtils {
 
@@ -1207,7 +1209,5 @@ public class TransportClientUtils {
                              .inOrder(true),
                 spanTermQuery("field1", "foo")
         );
-
-
     }
 }
