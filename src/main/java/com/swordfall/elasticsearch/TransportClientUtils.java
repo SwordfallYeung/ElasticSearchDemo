@@ -107,6 +107,9 @@ public class TransportClientUtils {
 
     private TransportClient client = null;
 
+    /**
+     * 这里使用饿汉单例模式创建TransportClient
+     */
     public TransportClientUtils() {
         if (client == null){
             synchronized (TransportClientUtils.class){
@@ -131,7 +134,7 @@ public class TransportClientUtils {
         return client;
     }
 
-    /*------------------------------------------- 单操作 -----------------------------------------------*/
+    /*------------------------------------------- Single Document start -----------------------------------------------*/
 
     /**
      * 增，插入记录
@@ -291,7 +294,9 @@ public class TransportClientUtils {
         client.update(updateRequest);
     }
 
-    /*------------------------------------------- 多操作 -----------------------------------------------*/
+    /*------------------------------------------- Single Document end -----------------------------------------------*/
+
+    /*------------------------------------------- Multi Document start -----------------------------------------------*/
 
     /**
      * 指定单个Id获取，指定多个Id获取，从另外一个库表获取数据
@@ -491,6 +496,7 @@ public class TransportClientUtils {
                 .filter(QueryBuilders.matchQuery("category", "xzy"))
                 .get();
     }
+    /*------------------------------------------- Multi Document start -----------------------------------------------*/
 
     /*------------------------------------------- search Api start -----------------------------------------------*/
 
