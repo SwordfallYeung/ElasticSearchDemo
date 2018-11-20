@@ -741,6 +741,10 @@ public class RestClientUtils {
 
     }
 
+    /**
+     * 根据id批量获取数据
+     * @throws Exception
+     */
     public void multiGet() throws Exception{
         MultiGetRequest request = new MultiGetRequest();
         request.add(new MultiGetRequest.Item(
@@ -825,9 +829,6 @@ public class RestClientUtils {
         MultiGetItemResponse item2 = response.getResponses()[0];
         Exception e = item.getFailure().getFailure();
         ElasticsearchException ee = (ElasticsearchException) e;
-
-
-
     }
 
     /*------------------------------------------------ document Api end ----------------------------------------------*/
@@ -850,7 +851,7 @@ public class RestClientUtils {
 
         //using the SearchSourceBuilder
         SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
-        sourceBuilder.query(QueryBuilders.termQuery("user", "kimchy"));;
+        sourceBuilder.query(QueryBuilders.termQuery("user", "kimchy"));
         sourceBuilder.from(0);
         sourceBuilder.size(5);
         sourceBuilder.timeout(new TimeValue(60, TimeUnit.SECONDS));
@@ -860,12 +861,12 @@ public class RestClientUtils {
         searchRequest2.source(sourceBuilder);
 
         //Building queries
-        //One way, QueryBuilder can be created using its constructor
+        //One way, QueryBuilder can be created using its constructor 使用QueryBuilder的构造函数
         MatchQueryBuilder matchQueryBuilder = new MatchQueryBuilder("user", "kimchy");
         matchQueryBuilder.fuzziness(Fuzziness.AUTO);
         matchQueryBuilder.prefixLength(3);
         matchQueryBuilder.maxExpansions(10);
-        //Two way, QueryBuilder objects can also be created using the QueryBuilders utility class.
+        //Two way, QueryBuilder objects can also be created using the QueryBuilders utility class. 直接使用matchQuery
         QueryBuilder matchQueryBuilder1 = matchQuery("user", "kimchy")
                                                        .fuzziness(Fuzziness.AUTO)
                                                        .prefixLength(3)
@@ -873,7 +874,7 @@ public class RestClientUtils {
 
         searchSourceBuilder.query(matchQueryBuilder1);
 
-        //Specifying Sorting
+        //Specifying Sorting 指定排序
         sourceBuilder.sort(new ScoreSortBuilder().order(SortOrder.DESC));
         sourceBuilder.sort(new FieldSortBuilder("_uid").order(SortOrder.ASC));
 
@@ -943,7 +944,7 @@ public class RestClientUtils {
             // failures should be handled here
         }
 
-        //Retrieving SearchHits
+        //Retrieving SearchHits 获取结果数据
         SearchHits hits = searchResponse.getHits();
         long totalHits = hits.getTotalHits();
         float maxScore = hits.getMaxScore();
@@ -1121,18 +1122,20 @@ public class RestClientUtils {
         searchResponse = secondResponse.getResponse();
     }
 
+    /**
+     * 查询模板
+     * @throws Exception
+     */
     public void searchTemplate() throws Exception{
         //Inline Templates
         SearchTemplateRequest request = new SearchTemplateRequest();
         request.setRequest(new SearchRequest("posts"));
-
         request.setScriptType(ScriptType.INLINE);
         request.setScript(
                 "{" +
                  "  \"query\": { \"match\": { \"{{ field }}\": \"{{ value }}\" } }," +
                  "  \"size\": \"{{ size }}\"" +
                  "}");
-
         Map<String, Object> scriptParams = new HashMap<>();
         scriptParams.put("field", "title");
         scriptParams.put("value", "elasticsearch");
@@ -1155,25 +1158,24 @@ public class RestClientUtils {
         Response scriptResponse = getRestClient().performRequest(scriptRequest);
 
         //instead of providing an inline script
-        SearchTemplateRequest request1 = new SearchTemplateRequest();
-        request1.setRequest(new SearchRequest("posts"));
-        request1.setScriptType(ScriptType.STORED);
-        request1.setScript("title_search");
+        request.setRequest(new SearchRequest("posts"));
+        request.setScriptType(ScriptType.STORED);
+        request.setScript("title_search");
         Map<String, Object> params = new HashMap<>();
         params.put("field", "title");
         params.put("value", "elasticsearch");
         params.put("size", 5);
-        request1.setScriptParams(params);
+        request.setScriptParams(params);
 
         //Rendering Templates
-        request1.setSimulate(true);
+        request.setSimulate(true);
 
         //Optional Arguments
-        request1.setExplain(true);
-        request1.setProfile(true);
+        request.setExplain(true);
+        request.setProfile(true);
 
         //Synchronous Execution
-        SearchTemplateResponse response = client.searchTemplate(request1, RequestOptions.DEFAULT);
+        SearchTemplateResponse response = client.searchTemplate(request, RequestOptions.DEFAULT);
 
         //Asynchronous Execution
         ActionListener<SearchTemplateResponse> listener = new ActionListener<SearchTemplateResponse>() {
@@ -1187,27 +1189,31 @@ public class RestClientUtils {
 
             }
         };
-        client.searchTemplateAsync(request1, RequestOptions.DEFAULT, listener);
+        client.searchTemplateAsync(request, RequestOptions.DEFAULT, listener);
 
         //SearchTemplate Response
-        SearchTemplateResponse response1 = client.searchTemplate(request1, RequestOptions.DEFAULT);
+        SearchTemplateResponse response1 = client.searchTemplate(request, RequestOptions.DEFAULT);
         SearchResponse searchResponse = response1.getResponse();
         BytesReference source = response1.getSource();
     }
 
+    /**
+     * 多个查询模板执行
+     * @throws Exception
+     */
     public void MultiSearchTemplate() throws Exception{
         String[] searchTerms = {"elasticsearch", "logstash", "kibana"};
         MultiSearchTemplateRequest multiRequest = new MultiSearchTemplateRequest();
-        for (String searchTerm: searchTerms){
+        for (String searchTerm: searchTerms) {
             SearchTemplateRequest request = new SearchTemplateRequest();
             request.setRequest(new SearchRequest("posts"));
 
             request.setScriptType(ScriptType.INLINE);
             request.setScript(
                     "{" +
-                    " \"query\": { \"match\": { \"{{field}}\": \"{{value}}\" }}," +
-                    " \"size\": \"{{size}}\"" +
-                    "}"
+                            " \"query\": { \"match\": { \"{{field}}\": \"{{value}}\" }}," +
+                            " \"size\": \"{{size}}\"" +
+                            "}"
             );
 
             Map<String, Object> scriptParams = new HashMap<>();
@@ -1217,35 +1223,33 @@ public class RestClientUtils {
             request.setScriptParams(scriptParams);
 
             multiRequest.add(request);
+        }
 
-            //Optional arguments
+        //同步执行
+        MultiSearchTemplateResponse multiResponse = client.msearchTemplate(multiRequest, RequestOptions.DEFAULT);
 
-            //Synchronous Execution
-            MultiSearchTemplateResponse multiResponse = client.msearchTemplate(multiRequest, RequestOptions.DEFAULT);
+        //异步执行
+        ActionListener<MultiSearchTemplateResponse> listener = new ActionListener<MultiSearchTemplateResponse>() {
+            @Override
+            public void onResponse(MultiSearchTemplateResponse response) {
 
-            //Asynchronous Execution
-            ActionListener<MultiSearchTemplateResponse> listener = new ActionListener<MultiSearchTemplateResponse>() {
-                @Override
-                public void onResponse(MultiSearchTemplateResponse response) {
+            }
 
-                }
+            @Override
+            public void onFailure(Exception e) {
 
-                @Override
-                public void onFailure(Exception e) {
+            }
+        };
+        client.msearchTemplateAsync(multiRequest, RequestOptions.DEFAULT, listener);
 
-                }
-            };
-            client.msearchTemplateAsync(multiRequest, RequestOptions.DEFAULT, listener);
-
-            //MultiSearchTemplateResponse
-            for (MultiSearchTemplateResponse.Item item : multiResponse.getResponses()) {
-                if (item.isFailure()) {
-                    String error = item.getFailureMessage();
-                } else {
-                    SearchTemplateResponse searchTemplateResponse = item.getResponse();
-                    SearchResponse searchResponse = searchTemplateResponse.getResponse();
-                    searchResponse.getHits();
-                }
+        //MultiSearchTemplateResponse
+        for (MultiSearchTemplateResponse.Item item : multiResponse.getResponses()) {
+            if (item.isFailure()) {
+                String error = item.getFailureMessage();
+            } else {
+                SearchTemplateResponse searchTemplateResponse = item.getResponse();
+                SearchResponse searchResponse = searchTemplateResponse.getResponse();
+                searchResponse.getHits();
             }
         }
     }
